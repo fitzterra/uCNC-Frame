@@ -7,7 +7,7 @@
 // Draw/print Control
 
 // Set to true to draw for printing - motor and bearing will not be drawn
-print = true;
+print = false;
 
 // What to draw? One of:
 // "bs" for bearing side bridge
@@ -19,7 +19,7 @@ draw = "all";
 use <ToolsLib.scad>;
 use <StepMotor_28BYJ-48.scad>;
 
-_version = "v0.8";
+_version = "v0.9";
 
 // Cylinder granularity
 $fn=120;
@@ -62,32 +62,41 @@ module XBridgeBearingSide(h, w, f, t, rd, rcd, md, dwd, b_id, b_od, b_t) {
     // and 3 times the plate thickness
     rOd = rd+rd*2/5;
 
-    // Bearing clearance to face plate. Make this big enough to allow a shaft
-    // to fit for holding the bearing.
-    b_c = 4;
 
     // The base bridge and a cut out for the bearing box
     difference() {
         XBridge(h, w, f, t, rd, rcd, md, dwd);
-        translate([XB_w/2, XB_h-(XB_rd*7/5)/2-XB_rcd/2, b_od/2+XB_t+b_c])
+        translate([w/2, h-(rd*7/5)/2-rcd/2, b_od/2+t*2])
             // Cut out bearing space
-            cube([rOd+1, b_t+0.4, b_od+1], center=true);
+            cube([rOd+1, b_t+0.4, b_od], center=true);
     }
     
     // Placement of the bearing box
-    translate([XB_w/2, XB_h-(XB_rd*7/5)/2-XB_rcd/2, b_od/2+XB_t+b_c]) {
+    translate([w/2, h-(rd*7/5)/2-rcd/2, b_od/2+t]) {
         // The bearing box.
         difference() {
-            // Outer box including 0.2 mm clearance above/below bearing
-            cube([rOd, b_t+t*2+0.4, b_od], center=true);
+            union() {
+                // Outer box including 0.2 mm clearance above/below bearing
+                cube([b_od, b_t+t*3+0.4, b_od/2+t*3], center=true);
+                translate([0, 0, t*3])
+                    rotate([-90, 0, 0])
+                    cylinder(h=b_t+t*3+0.4, d=b_od, center=true);
+            }
             // Cut out bearing space
-            cube([rOd+1, b_t+0.4, b_od+1], center=true);
+            translate([0, 0, (b_od/2+t*3)/2])
+                cube([b_od+1, b_t+0.4, b_od+t*3+1], center=true);
+            // Open up the wire slit again. The bridge base defines the width
+            // of the slit as dwdC which 1.2 * dwd, and the breadth as 1.4xrOd
+            cube([rOd*1.4, dwd*1.2, b_od+t*3], center=true);
+
             // mounting holes
+            translate([0, 0, t*3])
             rotate([-90, 0, 0])
-                cylinder(d=b_id, h=b_t+t*2+1, center=true);
+                cylinder(d=b_id, h=b_t+t*3+1, center=true);
         }
         // The bearing sample if not printing
         if (print == false) {
+            translate([0, 0, t*3])
             rotate([-90, 0, 0])
                 color("Silver")
                     Bearing(b_id, b_od, b_t);
