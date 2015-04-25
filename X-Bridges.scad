@@ -19,7 +19,7 @@ draw = "all";
 use <ToolsLib.scad>;
 use <StepMotor_28BYJ-48.scad>;
 
-_version = "v0.9";
+_version = "v0.10";
 
 // Cylinder granularity
 $fn=120;
@@ -28,7 +28,7 @@ $fn=120;
 XB_h=52;    // Height
 XB_w=47;    // Width
 XB_f=30;    // Length of foot piece
-XB_t=2;     // Wall thickness
+XB_t=1.8;     // Wall thickness
 XB_rd=6;    // Diameter of rail rods
 XB_rcd=20;  // Rails center distance - distance center-to-center
 XB_md=4;    // Mount slits diameter in foot.
