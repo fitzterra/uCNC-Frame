@@ -133,9 +133,9 @@ module Bearing(id, od, h) {
     }
 }
 
-module Version(h=1, s=4, v="_ver_") {
+module Version(h=1, s=4, v="_ver_", halign="left", valign="bottom") {
     linear_extrude(height=h, convexity=4)
                 text(v, size=s, font="Bitstream Vera Sans",
-                     halign="left",
-                     valign="bottom");
+                     halign=halign,
+                     valign=valign);
 }

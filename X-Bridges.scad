@@ -1,6 +1,5 @@
 /**
- *
- * Bearing side X bridge.
+ * X Bridges
  **/
 
 //-----------------------------------
@@ -16,36 +15,12 @@ print = false;
 draw = "all";
 //------------------------------------
 
-use <ToolsLib.scad>;
-use <StepMotor_28BYJ-48.scad>;
-
+// Version number for X Bridges
 _version = "v0.10";
 
-// Cylinder granularity
-$fn=120;
-
-// XBridge general sizes
-XB_h=52;    // Height
-XB_w=47;    // Width
-XB_f=30;    // Length of foot piece
-XB_t=1.8;     // Wall thickness
-XB_rd=6;    // Diameter of rail rods
-XB_rcd=20;  // Rails center distance - distance center-to-center
-XB_md=4;    // Mount slits diameter in foot.
-XB_dwd=1;   // Drive wire diameter
-
-// XBridge bearing side bearing params
-B_od = 11;
-B_id = 5;
-B_t = 5;
-
-// Direct from the StepMotor28BYJ library
-MBH = 18.8;   // motor body height
-MBD = 28.25;  // motor body OD
-MTH  = 0.8;   // mounting tab thickness
-MTW  = 7.0;   // mounting tab width
-MHCC = 35.0;  // mounting hole center-to-center
-SHH = 9.75;   // height of shaft above motor body 
+include <Configuration.scad>;
+use <ToolsLib.scad>;
+use <StepMotor_28BYJ-48.scad>;
 
 /**
  * Module to extend the XBridge module for the bearing side X Bridge.
