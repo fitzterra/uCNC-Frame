@@ -34,8 +34,22 @@ XC_w = 20;      // Width
 XC_h = 40;      // Height
 XC_t = wallT;   // Wall Thickness
 XC_rd = XB_rd;  // Rails are the same diameter as for the X Bridge
+XC_rhc = 0.4;     // Clearance across rail hole diameter for easier fit of rods.
 XC_rcd = XB_rcd;// Rails are same distance apart as for X Bridge
 XC_bw = 5;      // Total width for each bushing
+XC_dwd = B_od-2;  // The distance between the holes for the drive wires through
+                // the carraige. It is best to have this width the same as the
+                // bearing OD and the drive shaft/motor coupling OD to ensure
+                // the wires stay the same width apart at points in the carraige
+                // travel. This value also determines the depth of the carraige.
+XC_springs = false; // The original uCNC plotter design had "springs" between the
+                    // Top and bottom parts which I assume was to help in case
+                    // the top and bottom rods were not perfectly parallel. Since
+                    // moving the drive wire to the center between the top and
+                    // bottom rods in the carraige, there is not much space left
+                    // to add the springs and get them to print properly. For
+                    // this reason, this option allows them to be added possbily
+                    // when upscaling the complete design.
 
 
 // Direct from the StepMotor28BYJ library

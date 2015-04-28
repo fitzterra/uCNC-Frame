@@ -3,7 +3,7 @@
  **/
 
 // Version number for X Carraige
-_version = "v0.1";
+_version = "v0.4";
 
 include <Configuration.scad>;
 include <ToolsLib.scad>;
@@ -93,12 +93,26 @@ module SpringBox(w, h, d, wt, st, ss, ns=4) {
  *
  **/
 module XCarraige(w, h, t, rd, rcd, bw) {
-    // We use the wall thickness as base for the rail bushings outer diameter,
-    // which is also then the height for the side walls.
+    // We use the wall thickness as base for the rail bushings outer diameter.
     b_od = rd + t*2;
 
     // Preset the diameter for the drive wire holes
     dwh = XB_dwd+1;
+    
+    // The carraige depth is determined by either the distance between the drive
+    // wire holes, or the bushings outer diameter.
+    drvWrDist = dwh + XC_dwd;
+    // Now determine the carriage depth. Note that this depth is EXCLUDING the
+    // flace plate thickness. Also note that we want to add 1mm clearing if the
+    // drive wire distance determines the depth or else the one drive wire hole
+    // will be right on the edge. Due to this, the center for the depth must also
+    // be calculated and remebered separately.
+    cd = (drvWrDist > b_od) ? drvWrDist-dwh : b_od;
+    cdc = (drvWrDist > b_od) ? drvWrDist/2 : b_od/2;
+    echo("drvWrDist:", drvWrDist);
+    echo("b_od:", b_od);
+    echo("cd:", cd);
+    echo("cdc:", cdc);
 
     // Precalculate the spring box params because we use it in multiple places.
     // Since the spring box may not have enough height in the original size, we
@@ -108,13 +122,13 @@ module XCarraige(w, h, t, rd, rcd, bw) {
     // The final spring box height
     sb_h = rcd/2-dwh/2-b_od/2+sb_ext;
     // The depth
-    sb_d = b_od+t;
+    sb_d = t+cd;
     // The wall thickness
     sb_wt = 0.8;
     // The spring thickness
-    sb_st = 0.8;
+    sb_st = 0.5;
     // The spacing between springs
-    sb_ss = 0.5;
+    sb_ss = 1;
     // Number of springs
     sb_ns = 4;
 
@@ -124,11 +138,11 @@ module XCarraige(w, h, t, rd, rcd, bw) {
             cube([w, h, t]);
 
             // Draw the side walls. Side walls does not go all the way to the top, but
-            // stops at the top of the topbussing outer wall.
+            // stops at the top of the top bushing outer wall.
             for(x=[0, w-t]) {
                 // The side wall
-                translate([x, 0, t])
-                    cube([t, rcd+b_od, b_od]);
+                translate([x, b_od/2, t])
+                    cube([t, rcd, cd]);
                 // The lip on the upper part, and rounded gusset for smartness
                 translate([x, rcd+b_od, t]) {
                     cube([t, h-rcd-b_od, t]);
@@ -149,36 +163,47 @@ module XCarraige(w, h, t, rd, rcd, bw) {
                     [w-bw, rcd],  // Bottom left, x and y
                 ];
             for(bp=btp) {
-                translate([bp[0], bp[1], 0])
-                    cube([bw, b_od, b_od/2]);
-                translate([bp[0], bp[1]+b_od/2, 0+b_od/2])
+                translate([bp[0], bp[1], t])
+                    cube([bw, b_od, cdc]);
+                translate([bp[0], bp[1]+b_od/2, t+cdc])
                     rotate([0, 90, 0])
                         cylinder(h=bw, d=b_od);
+            }
+
+            // 3mm blocks just below the top bushings. We'll put 2mm x 5mm deep
+            // holes in them later. This is so you can use an M2 screw to hold
+            // the drive wires secure after threading the wire.
+            for(x=[0, w-XC_bw]) {
+                translate([x, rcd-3, t])
+                    cube([XC_bw, 3+b_od/2, cd]); 
             }
         }
 
         // Stuff we want to remove goes here.
         // Rail holes
         for (y=[rd/2+t, rd/2+t+rcd]) {
-            translate([-1, y, rd/2+t])
+            translate([-1, y, t+cd/2])
                 rotate([0, 90, 0])
-                    cylinder(h=w*1.3, d=rd);
+                    cylinder(h=w*1.3, d=rd+XC_rhc);
         }
         // Drive wire holes ...
-        for (z=[t+dwh/2, b_od-dwh/2]) {
+        //for (z=[t+(cd-XC_dwd)/2, t+(cd+XC_dwd)/2]) {
+        for (z=[t+dwh/2, t+dwh/2+XC_dwd]) {
             translate([-1, (b_od+rcd)/2, z])
                 rotate([0, 90, 0])
                     cylinder(h=w*1.3, d=dwh);
         }
-        // ... and through the face plate
-        for (x=[t+1, w-t-dwh-1]) {
-            translate([x, (b_od+rcd)/2-dwh/2, -1])
-                cube([XB_dwd*1.3, dwh, t+2]);
+        // 2mm x 5mm deep holes in the blocks provided for securing the drive
+        // wire ends in the carraige
+        for(x=[0, w-XC_bw]) {
+            translate([x+XC_bw/2, rcd-0.5, t+cd-5])
+                cylinder(d=2, h=6);
         }
 
-        // The spring box cutout.
-        translate([-1, b_od-sb_ext+0.1, -1])
-            cube([w+2, sb_h-0.2, sb_d+2]);
+        // The spring box cutout if needed
+        if(XC_springs==true) 
+            translate([-1, b_od-sb_ext+0.1, -1])
+                cube([w+2, sb_h-0.2, sb_d+2]);
 
         // The two holes at the top like the original
         for (x=[w/4, w-w/4]) {
@@ -187,9 +212,10 @@ module XCarraige(w, h, t, rd, rcd, bw) {
         }
     }
 
-    // The spring box
-    translate([0, b_od-sb_ext, 0])
-        SpringBox(w, sb_h, sb_d, sb_wt, sb_st, sb_ss, sb_ns);
+    // The spring box If needed
+    if(XC_springs==true)
+        translate([0, b_od-sb_ext, 0])
+            SpringBox(w, sb_h, sb_d, sb_wt, sb_st, sb_ss, sb_ns);
 
 
     // The version number
@@ -203,4 +229,3 @@ module XCarraige(w, h, t, rd, rcd, bw) {
 
 XCarraige(XC_w, XC_h, XC_t, XC_rd, XC_rcd, XC_bw);
 
-*SpringBox(20, 5.4, 20, 0.8, 0.5, 0.5, 4);
