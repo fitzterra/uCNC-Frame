@@ -29,7 +29,23 @@ customisable), but the bearing side is easier to adapt using variables.
 
 X Carraige
 ==========
-To be completed...
+The X Carriage has the same base design as the original uCNC design, but since
+the drive wires runs center between the upper and lower X rails, the space to
+add the "springs" like in the original is limited.
+
+The OpenSCAD config is mostly parameteric and does allow for the springs to be
+added, but this will probably only work well on a larger scale plotter (which is
+possible with the parametric design).
+
+This carraige also has screw holes that can be used to anker the drive wires to
+the carraige. This makes it easier to thread the drive wire and also to adjust
+the tension.
+
+The parameteric design allows the distance between the drive wires (based on the
+sizes of the X bearing and X motor shaft/coupling) to be supplied. The code will
+then automatically figure out the correct depth for the carraige based on the
+wider of the drive wire distance apprat, or the outer diameter for the rail
+bushings.
 
 Y Bridges
 =========
@@ -38,3 +54,13 @@ To be completed...
 Y Carraige
 ==========
 To be completed...
+
+Motor Coupling
+==============
+The Motor Coupling SCAD file can be used to print a coupling that fits snugly
+over the 28BYJ-48 motor shaft. This is also a parametric design and outer
+diameter, height, internal spacing, etc. may be supplied.
+
+The coupling makes it easy to get the motor side outer diamer in line with the
+bearing outer diameter on the other side to allow the drive wires to run
+parallel across the X axis.
