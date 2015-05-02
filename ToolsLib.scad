@@ -133,6 +133,84 @@ module Bearing(id, od, h) {
     }
 }
 
+/**
+ * Draws a corner block with a 45° top right side (a right triangle)
+ *
+ * @param xy The x and y length for the triangle
+ * @param h  The height
+ */
+module Corner45(xy, h) {
+    // We draw x and y 1mm thick cubes and use hulling to traw the 45° side.
+    hull() {
+        cube([1, xy, h]);
+        cube([xy, 1, h]);
+    }
+}
+
+/**
+ * Module to draw a servo.
+ *
+ * The servo is parametric, but draws a 9g Servo shape specifically.
+ *
+ * @param w   Body width
+ * @param lh  Lower body height - up to bottom of mounting tabs
+ * @param d   Body depth
+ * @param tw  Width of one tab
+ * @param th  Height of tab
+ * @param uh  Upper body height - from top of mounting tabs to body top
+ * @param gh  Height og top round gear extrusion
+ * @param bgd Top back smaller gear extrusion diameter
+ * @param sd  Shaft diameter
+ * @param sh  Shaft height
+ * @param mhd Mounting hole diameter
+ **/
+module servo(w, d, lh, uh, tw, th, gh, bgd, sd, sh, mhd, wt=1.2, wo=4.2) {
+    color("blue", 0.5) {
+        // Lower body
+        cube([w, d, lh]);
+        // Mounting tab layer on top of lower body
+        translate([-tw, 0, lh])
+            difference() {
+                cube([w+2*tw, d, th]);
+                // Left mounting hole and opening
+                translate([tw/2, d/2, -1])
+                    cylinder(h=th+2, d=mhd);
+                translate([0, d/2-mhd/4, -1])
+                    cube([tw/2, mhd/2, th+2]);
+                // Right mounting hole and opening
+                translate([w+tw*2-tw/2, d/2, -1])
+                    cylinder(h=th+2, d=mhd);
+                translate([w+tw*2-tw/2, d/2-mhd/4, -1])
+                    cube([tw/2, mhd/2, th+2]);
+            }
+        // Upper body on top of that
+        translate([0, 0, lh+th])
+            cube([w, d, uh]);
+        // Gearbox extrusion top left
+        translate([d/2, d/2, lh+th+uh])
+            cylinder(h=gh, d=d);
+        // The smaller gear extrusion behind the big one
+        translate([d, d/2, lh+th+uh])
+            cylinder(h=gh, d=bgd);
+    }
+    // The shaft
+    color("white") {
+        translate([d/2, d/2, lh+th+uh+gh]) 
+            difference() {
+                cylinder(h=sh, d=sd);
+                cylinder(h=sh+1, d=sd/4);
+            }
+    }
+    // The wires
+    for (y=[[d/2-wt,"orange"], [d/2,"red"], [d/2+wt,"brown"]]) {
+        translate([0, y[0], wo])
+            rotate([0, -90, 0])
+                color(y[1])
+                    cylinder(h=4, d=wt);
+    }
+}
+
+
 module Version(h=1, s=4, v="_ver_", halign="left", valign="bottom") {
     linear_extrude(height=h, convexity=4)
                 text(v, size=s, font="Bitstream Vera Sans",

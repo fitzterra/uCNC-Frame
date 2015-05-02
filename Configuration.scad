@@ -51,6 +51,27 @@ XC_springs = false; // The original uCNC plotter design had "springs" between th
                     // this reason, this option allows them to be added possbily
                     // when upscaling the complete design.
 
+// PenTool parameters
+PT_w = XC_w;        // Width is the same as the X-carraige
+PT_h = XC_h * 2;    // Height is the X-carriage + servo height
+PT_t = wallT;       // Wall thickness
+PT_psw = 12;        // The width (at face level) for the pen holder slides
+SRV_hornPos = 20;   // How far above the tool face the top of the servo horn
+                    // should be
+
+// 9g Micro servo parameters
+SRV_w = 22.6;   // Body width
+SRV_lh = 15.6;  // Lower body height - up to bottom of mounting tabs
+SRV_d = 12.3;   // Body depth
+SRV_tw = 4.4;   // Width of one tab
+SRV_th = 2.46;  // Height of tab
+SRV_uh = 4.15;  // Upper body height - from top of mounting tabs to body top
+SRV_gh = 4.5;   // Height og top round gear extrusion
+SRV_bgd = 5;  // Top back smaller gear extrusion diameter
+SRV_sd = 5;     // Shaft diameter
+SRV_sh = 2.6;   // Shaft height
+SRV_mhd = 2.2;  // Mounting hole diameter
+SRV_fh = SRV_lh+SRV_th+SRV_uh+SRV_gh+SRV_sh; // The full servo height
 
 // Direct from the StepMotor28BYJ library
 MBH = 18.8;   // motor body height
@@ -59,4 +80,5 @@ MTH  = 0.8;   // mounting tab thickness
 MTW  = 7.0;   // mounting tab width
 MHCC = 35.0;  // mounting hole center-to-center
 SHH = 9.75;   // height of shaft above motor body 
+
 
