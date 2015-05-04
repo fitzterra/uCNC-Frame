@@ -55,9 +55,12 @@ XC_springs = false; // The original uCNC plotter design had "springs" between th
 PT_w = XC_w;        // Width is the same as the X-carraige
 PT_h = XC_h * 2;    // Height is the X-carriage + servo height
 PT_t = wallT;       // Wall thickness
-PT_psw = 12;        // The width (at face level) for the pen holder slides
+PT_psw = PT_w-PT_t*2; // The width (at face level) for the pen holder slides
 SRV_hornPos = 20;   // How far above the tool face the top of the servo horn
                     // should be
+
+// Magnet size is used for attachment method
+magSize = [6, 3];   // 6mm diameter by 3mm thick
 
 // 9g Micro servo parameters
 SRV_w = 22.6;   // Body width
