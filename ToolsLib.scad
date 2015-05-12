@@ -208,8 +208,66 @@ module servo(w, d, lh, uh, tw, th, gh, bgd, sd, sh, mhd, wt=1.2, wo=4.2) {
                 color(y[1])
                     cylinder(h=4, d=wt);
     }
+
+    // The servo horn
+    translate([d/2, d/2, SRV_fh-SH_si])
+        rotate([0, 0, -90])
+        color("white")
+        ServoHorn(SH_sOD, SH_eOD, SH_l, SH_t, SH_sh, SH_sd, SH_si,
+                  SH_sr, SH_srd, SH_shd, SH_lh, SH_lhd);
 }
 
+/**
+ * A Single sided servo horn.
+ *
+ * @param sOD Shaft side outer diameter
+ * @param eOD Edge side outer diameter
+ * @param l Total length
+ * @param t Thickness
+ * @param sh Shaft side full height
+ * @param sd Shaft diameter
+ * @param si Shaft inset into the horn - how deep does the shaft fit into the horn
+ * @param sr Screw recess - the amount of recess for the screw in the horn top
+ * @param srd Screw recess diameter
+ * @param shd Screw hole diameter
+ * @param lh Number of link holes
+ * @param lhd Link hole diameter
+ **/
+module ServoHorn(sOD=7, eOD=4, l=17.2, t=1.6, sh=4.5, sd=4.6, si=2.4, sr=1, srd=4.8, shd=2.3, lh=5, lhd=1) {
+    difference() {
+        union() {
+            // The shaft side outer cylinder
+            cylinder(h=sh, d=sOD);
+            // The horn part
+            translate([0, 0, sh-t])
+                hull() {
+                    cylinder(h=t, d=sOD);
+                    translate([l-(sOD+eOD)/2, 0, 0])
+                        cylinder(h=t, d=eOD);
+                }
+        }
+        translate([0, 0, -1]) {
+            // Screw hole
+            cylinder(d=shd, h=sh+2);
+            // Shaft insert
+            cylinder(h=si+1, d=sd);
+        }
+        // Top screw recess
+        translate([0, 0, sh-sr])
+            cylinder(d=srd, h=sr+1);
+
+        // Distance between first and last link hole center
+        linkHolesDist = l - sOD - lhd/2 - eOD/2;
+        // Distance between link hole centers
+        lhcd = linkHolesDist/(lh-1);
+        // Link holes
+        translate([sOD/2+lhd/2, 0, 0])
+            for(c=[0:lh-1]) {
+                translate([c*lhcd, 0, 0])
+                    cylinder(h=sh+1, d=lhd);
+            }
+    }
+}
 
 module Version(h=1, s=4, v="_ver_", halign="left", valign="bottom") {
     linear_extrude(height=h, convexity=4)

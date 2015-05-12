@@ -5,20 +5,35 @@
 // Draw/print Control
 
 // Set to true to draw for printing
-print = false;
+print = true;
 
-// What to draw? One of:
-// "bs" for bearing side bridge
-// "ms" for motor side bridge
-// "all" to draw both bridges
-draw = "all";
+// Draw the pen tool?
+drawPenTool = false;
+
+// How many pen holders to draw? 0 - 2
+drawPenHolder = 2;
+
+// Draw the pen lift?
+drawPenLift = false;
+
+// Mounting option? One of:
+// "mag" for magnet mounts
+// "M2" for M2 screw mounting
+mount = "M2";
+
+// Pen diameter
+penD = 11;
+
 //------------------------------------
 
 // Version number for Pen Tool
 _version = "v0.2";
 
+use <Screw_Library/Thread_Library.scad>;
+
 include <Configuration.scad>;
 include <ToolsLib.scad>;
+use <Pens.scad>;
 
 /**
  * Module to create a V type edge extension.
@@ -64,7 +79,7 @@ module PenTool(w, h, t, psw, mag="") {
     // Calculate where the servo base will sit below the pentool face bottom.
     // This position is calculated based on the position the servo horn top
     // should be above the face top.
-    srvZ = SRV_hornPos + t - SRV_fh;
+    srvZ = SRV_hornPos + t - SRV_fhh;
 
     // The x and y length to cut in at the bottom corners for the 45° corners
     cut45len = w/4;
@@ -184,20 +199,20 @@ module PenTool(w, h, t, psw, mag="") {
  **/
 module PenLoop(id, bw, bt, bh) {
     // Auto adjust base width for slight clearance for sliding in
-    bw = bw-0.4;
+    bw = bw-0.3;
 
     // The base is a V type shape to it slides into the PenTool slide and stays
     // put. Calculate the narrow side width of the base where the loop is
     // attached to.
     bnw = bw - 2*(bt*0.2);
 
-    // Loop OD is 0.8mm. THis allows the ID to be exactly that of the pen, but
-    // we can cut the loop in the front center to give a tight fit, but not too
-    // tight to not allow it to slide up and down.
-    od = id+0.8;
+    // Loop OD is 1mm larger than the ID. This allows the ID to be almost exactly
+    // that of the pen, but we can cut the loop in the front center to give a
+    // tight fit, but not too tight to not allow it to slide up and down.
+    od = id+2;
 
     // The Pen (loop) center is always this far from the face.
-    lc = 9;
+    lc = PEN_coffs;
 
     // Start with the V slide base
     translate([0, 0, bh])
@@ -205,7 +220,7 @@ module PenLoop(id, bw, bt, bh) {
             // The inner square base with bt width edges on both sides
             translate([bt, 0, 0])
                 cube([bw-2*bt, bh, bt]);
-            // Add a slanted edge of bt base with and 20% slant on the left
+            // Add a slanted edge of bt base with a 20% slant on the left
             VEdge(bt, bt/1.2, bh, bt, "l");
             // Do the same for the right
             translate([bw-bt, 0, 0])
@@ -227,24 +242,102 @@ module PenLoop(id, bw, bt, bh) {
     }
 }
 
-if (draw=="all" || draw=="pentool")
-    PenTool(PT_w, PT_h, PT_t, PT_psw);
-    //PenTool(PT_w, PT_h, PT_t, PT_psw, magSize);
+/**
+ * Fits arounf the pen and connects to the servo horn to raise and lower the pen.
+ *
+ * @param pd Pen diameter at the point where this should fit.
+ * @param ta Taper Angle for the inner cylinder. This should probably never be
+ *        much more than 2° or 3°.
+ **/
+module PenLift(pd, ta=2) {
+    h = 10; // height
+    trt = pd/2+1; // Top radius for the tappered inner cylinder
+    trb = h/tan(90-ta) + pd/2 + 1; // Bottom radius for tappered inner cylinder
 
-if(print==false && draw=="all") {
-    translate([(PT_psw+PT_w)/2, XC_h/2, PT_t])
-        rotate([-90, 180, 0])
+    // The inner cylinder
+    difference() {
+        // The tappered outer side
+        cylinder(r1=trb, r2=trt, h=h);
+        // Remove the inner tube at 0.2mm less than the pen diameter
+        translate([0, 0, -1])
+            cylinder(d=pd-0.2, h=h+2);
+        // Make a 1mm cut in the side of the inner cylinder
+        translate([0, -0.5, -1])
+            cube([trb+2, 1, h+2]);
+    }
+
+    // The outer fitting placed next to the inner for printing, or fitted over
+    // the inner tube if not printing
+    tr = print==true ? [trb*2+2, 0, 0] : [0, 0, 2];
+    translate(tr)
+        difference() {
+            union() {
+                // Outer diameter is the same as the bottom wider part of the
+                // tappered inner tube plus 2mm wall thickness
+                cylinder(d=trb*2+2, h=h);
+                // The hook for the servo horn. The part of the servo horn reaching
+                // over into the pen tool can be calculated as follows:
+                hornBit = SH_l - (SRV_d+SH_sOD)/2;
+                // We want the horn hook width to be 4mm
+                hhw = 5;
+                // The zero position for the pen lift will be the center of pen tool
+                // width. We can then calculate the position for the horn hook.
+                translate([0, -PT_w/2+hornBit-hhw, 0])//+hornBit-hhw, 0])
+                    difference() {
+                        // The hook distance beyound the outer tube edge, id the
+                        // height of the servo horn above the tube when fitted
+                        // to the pen, including a 2mm wall
+                        cube([SRV_hornPos-PEN_coffs+2, hhw, h]);
+                        // Remove a cube on the inside for the horn to fit in
+                        translate([SRV_hornPos-PEN_coffs-SH_t-0.3, -1, 2])
+                            cube([SH_t+0.6, 9, h-4]);
+                    }
+            }
+            // Cut out the inner hole to be the same diameter as widest bottom
+            // part of the inner tube
+            translate([0, 0, -1])
+                cylinder(d=trb*2, h=h+2);
+        }
+
+}
+
+// Draw what is required
+if (drawPenTool)
+    PenTool(PT_w, PT_h, PT_t, PT_psw, mount=="mag" ? magSize : "");
+
+if(print==false && drawPenHolder>0) {
+    translate([PT_t+0.2, XC_h*3/4, PT_t])
+        rotate([90, 0, 0])
             color("orange")
-            PenLoop(11.1, PT_psw, PT_t, XC_h/4);
-    translate([(PT_w-PT_psw)/2, XC_h, PT_t])
-        rotate([-90, 180, 180])
-            color("green")
-            PenLoop(11.1, PT_psw, PT_t, XC_h/4);
+            PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4);
+    if (drawPenHolder>1)
+        translate([(PT_w-PT_psw)/2+0.2, XC_h+5, PT_t])
+            rotate([-90, 180, 180])
+                color("green")
+                PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4+5);
+    // Draw the pen
+    translate([PT_w/2, 0, PT_t+PEN_coffs])
+        rotate([-90, 0, 0])
+            Artliner725();
 }
 
-if (print==true) {
-    translate([-PT_psw-3, 0, 0])
-        PenLoop(11.1, PT_psw, PT_t, XC_h/4);
-    translate([-PT_psw-3, XC_h/2, 0])
-        PenLoop(11.1, PT_psw, PT_t, XC_h/4);
+if (print==true && drawPenHolder>0) {
+    translate([PT_psw, 0, 0])
+        rotate([0, 0, 180])
+        PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4);
+    if (drawPenHolder>1)
+        translate([0, 1, 0])
+            PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4+5);
 }
+
+if (drawPenLift==true) {
+    if(print==true) {
+        translate([-50, 0, 0])
+            PenLift(penD);
+    } else {
+        translate([PT_w/2, 50, PT_t+PEN_coffs])
+            rotate([-90, -90, 0])
+            PenLift(penD);
+    }
+}
+

@@ -2,8 +2,20 @@
  * X Carraige
  **/
 
+//-----------------------------------
+// Draw/print Control
+
+// Set to true to draw for printing
+print = true;
+
+// Mounting option? One of:
+// "mag" for magnet mounts
+// "M2" for M2 screw mounting
+mount = "M2";
+//------------------------------------
+
 // Version number for X Carraige
-_version = "v0.4";
+_version = "v0.5";
 
 include <Configuration.scad>;
 include <ToolsLib.scad>;
@@ -90,9 +102,14 @@ module SpringBox(w, h, d, wt, st, ss, ns=4) {
  * @param rd: Diameter of rail rods
  * @param rcd: Rails center distance - distance center-to-center
  * @param bw: Bushing width
+ * @param mag: If supplied, caveties for magnets of this size will be added to be
+ *        used as a means of attaching to the base. The value should be a vector
+ *        of [d, t] where d is the magnet diameter (additional clearance will be
+ *        added), and t is the magnet thickness. One cavety bottom center, and
+ *        one each top left and right will be added.
  *
  **/
-module XCarraige(w, h, t, rd, rcd, bw) {
+module XCarraige(w, h, t, rd, rcd, bw, mag="") {
     // We use the wall thickness as base for the rail bushings outer diameter.
     b_od = rd + t*2;
 
@@ -131,6 +148,14 @@ module XCarraige(w, h, t, rd, rcd, bw) {
     sb_ss = 1;
     // Number of springs
     sb_ns = 4;
+
+    // Mounting tabs are either for magnets or M2 screws. We calculate the
+    // diameters and sizes here to be used in multiple places.
+    tabID = mag=="" ? 2 : mag[0]+0.4;  // Inner diameter. Extra clearence for mag
+    tabOD = tabID + 2;  // Outer diameter - rim width - must be doubled
+    tabNeck = 1;        // Extra space for tab neck
+    mh_d = mag=="" ? t+2 : mag[1];    // Mount hole depth
+    mh_z = mag=="" ? -1 : 0.6;        // Mount hole Z offset
 
     difference() {
         union() {
@@ -177,6 +202,20 @@ module XCarraige(w, h, t, rd, rcd, bw) {
                 translate([x, rcd-3, t])
                     cube([XC_bw, 3+b_od/2, cd]); 
             }
+
+            // Top mounting tabs.
+            // Left tab
+            translate([-tabOD/2-tabNeck, XC_h-tabOD/2, 0]) {
+                cylinder(h=t, d=tabOD);
+                translate([0, -tabOD/2, 0])
+                    cube([tabOD/2+tabNeck, tabOD, t]);
+            }
+            // Right tab
+            translate([w+tabOD/2+tabNeck, XC_h-tabOD/2, 0]) {
+                cylinder(h=t, d=tabOD);
+                translate([-tabNeck-tabOD/2, -tabOD/2, 0])
+                    cube([tabOD/2+tabNeck, tabOD, t]);
+            }
         }
 
         // Stuff we want to remove goes here.
@@ -187,7 +226,6 @@ module XCarraige(w, h, t, rd, rcd, bw) {
                     cylinder(h=w*1.3, d=rd+XC_rhc);
         }
         // Drive wire holes ...
-        //for (z=[t+(cd-XC_dwd)/2, t+(cd+XC_dwd)/2]) {
         for (z=[t+dwh/2, t+dwh/2+XC_dwd]) {
             translate([-1, (b_od+rcd)/2, z])
                 rotate([0, 90, 0])
@@ -210,6 +248,16 @@ module XCarraige(w, h, t, rd, rcd, bw) {
             translate([x, h-w/4, -0.1])
                 cylinder(h=t+0.2, d=rd);
         }
+        // Mounting holes if not using magnets, else magnet indents.
+        // Bottom center - we use the tab OD to determine the center
+        translate([w/2, t+1+tabOD/2, mh_z])
+            cylinder(h=mh_d, d=tabID);
+        // Left tab
+        translate([-1-tabOD/2, XC_h-tabOD/2, mh_z])
+            cylinder(h=mh_d, d=tabID);
+        // Right tab
+        translate([w+1+tabOD/2, XC_h-tabOD/2, mh_z])
+            cylinder(h=mh_d, d=tabID);
     }
 
     // The spring box If needed
@@ -227,5 +275,5 @@ module XCarraige(w, h, t, rd, rcd, bw) {
 }
 
 
-XCarraige(XC_w, XC_h, XC_t, XC_rd, XC_rcd, XC_bw);
+XCarraige(XC_w, XC_h, XC_t, XC_rd, XC_rcd, XC_bw, mount=="mag" ? magSize : "");
 

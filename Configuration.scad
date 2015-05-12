@@ -58,23 +58,39 @@ PT_t = wallT;       // Wall thickness
 PT_psw = PT_w-PT_t*2; // The width (at face level) for the pen holder slides
 SRV_hornPos = 20;   // How far above the tool face the top of the servo horn
                     // should be
+PEN_coffs = 9;      // The offset from the tool face to the pen center
 
 // Magnet size is used for attachment method
 magSize = [6, 3];   // 6mm diameter by 3mm thick
 
+// Servo horn parameters
+SH_sOD = 7;   //Shaft side outer diameter
+SH_eOD = 4;   //Edge side outer diameter
+SH_l = 17.2;  //Total length
+SH_t = 1.6;   //Thickness
+SH_sh = 4.5;  //Shaft side full height
+SH_sd = 4.6;  //Shaft diameter
+SH_si = 2.4;  //Shaft inset into the horn - how deep does the shaft fit into the horn
+SH_sr = 1;    //Screw recess - the amount of recess for the screw in the horn top
+SH_srd = 4.8; //Screw recess diameter
+SH_shd = 2.3; //Screw hole diameter
+SH_lh = 5;    //Number of link holes
+SH_lhd = 1;   //Link hole diameter
+
 // 9g Micro servo parameters
-SRV_w = 22.6;   // Body width
-SRV_lh = 15.6;  // Lower body height - up to bottom of mounting tabs
-SRV_d = 12.3;   // Body depth
-SRV_tw = 4.4;   // Width of one tab
-SRV_th = 2.46;  // Height of tab
-SRV_uh = 4.15;  // Upper body height - from top of mounting tabs to body top
-SRV_gh = 4.5;   // Height og top round gear extrusion
+SRV_w = 22.5;   // Body width
+SRV_lh = 15.9;  // Lower body height - up to bottom of mounting tabs
+SRV_d = 11.8;   // Body depth
+SRV_tw = 4.7;   // Width of one tab
+SRV_th = 2.5;  // Height of tab
+SRV_uh = 22.7-SRV_th-SRV_lh;  // Upper body height - from top of mounting tabs to body top
+SRV_gh = 4;   // Height og top round gear extrusion
 SRV_bgd = 5;  // Top back smaller gear extrusion diameter
-SRV_sd = 5;     // Shaft diameter
-SRV_sh = 2.6;   // Shaft height
-SRV_mhd = 2.2;  // Mounting hole diameter
+SRV_sd = 4.6;     // Shaft diameter
+SRV_sh = 2.75;   // Shaft height
+SRV_mhd = 2;  // Mounting hole diameter
 SRV_fh = SRV_lh+SRV_th+SRV_uh+SRV_gh+SRV_sh; // The full servo height
+SRV_fhh = SRV_fh+SH_sh-SH_si;   // Servo full height including horn
 
 // Direct from the StepMotor28BYJ library
 MBH = 18.8;   // motor body height
