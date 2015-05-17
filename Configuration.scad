@@ -84,13 +84,14 @@ SRV_d = 11.8;   // Body depth
 SRV_tw = 4.7;   // Width of one tab
 SRV_th = 2.5;  // Height of tab
 SRV_uh = 22.7-SRV_th-SRV_lh;  // Upper body height - from top of mounting tabs to body top
-SRV_gh = 4;   // Height og top round gear extrusion
+SRV_gh = 4;   // Height of top round gear extrusion
 SRV_bgd = 5;  // Top back smaller gear extrusion diameter
 SRV_sd = 4.6;     // Shaft diameter
 SRV_sh = 2.75;   // Shaft height
 SRV_mhd = 2;  // Mounting hole diameter
 SRV_fh = SRV_lh+SRV_th+SRV_uh+SRV_gh+SRV_sh; // The full servo height
 SRV_fhh = SRV_fh+SH_sh-SH_si;   // Servo full height including horn
+// See below rack/pinion (RP_*) params for servo full height with pinion
 
 // Direct from the StepMotor28BYJ library
 MBH = 18.8;   // motor body height
@@ -100,4 +101,28 @@ MTW  = 7.0;   // mounting tab width
 MHCC = 35.0;  // mounting hole center-to-center
 SHH = 9.75;   // height of shaft above motor body 
 
+// Rack and pinion parameters
+RP_mmpt = 4;     // Millimeters per tooth for the rack/pinion gears
+RP_pt = 6;       // Number of teeth on the pinion gear
+RP_rt = 8;       // Number of teeth on the rack gear
+RP_pT = 2.5;     // Thickness of the pinion gear
+RP_rT = 5;       // Thickness of the rack gear
+RP_rH = 5;       // Height of the rack gear
+RP_pa = 5;       // Pressure angle for the gears. Small value for small gears
+RP_phd = 2;      // Pinion screw hole diameter
+RP_pcOD = SRV_sd+2;// Pinion shaft collar outer diameter
+RP_pcID = SRV_sd+0.3;// Pinion shaft collar inner diameter - fits over servo shaft
+RP_pch = SRV_sh-0.25;// Pinion shaft collar height - slightly less than servo shaft height
+// Calculate the servo full height with pinion mounted
+SRV_fhp = SRV_fh+RP_pT;   // Servo full height including pinion
+
+// Z carriage config
+ZC_sd = 3;  // Shaft diameter
+ZC_sl = 80; // Shaft length
+ZC_bh = 5;     // Height for each of the 3 bushings
+ZC_bt = 3;     // Wall thickness for the bushings
+ZC_cw = PT_w-2*PT_t; // Carraige width - same width as the pen tool, sans a pen
+                     // tool wall thicknes left and right
+ZC_cd = 10;   // Carraige depth excluding the rear half bushings
+ZC_ch = 50;   // Carraige height
 

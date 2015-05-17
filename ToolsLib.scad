@@ -2,6 +2,9 @@
  * Library of various tools used for the machine parts.
  **/
 
+include <Configuration.scad>;
+use <publicDomainGearV1.1.scad>;
+
 /**
  * General X bridge.
  *
@@ -163,8 +166,12 @@ module Corner45(xy, h) {
  * @param sd  Shaft diameter
  * @param sh  Shaft height
  * @param mhd Mounting hole diameter
+ * @param wt Wire thickness
+ * @param wo Wire offset from bottom
  **/
-module servo(w, d, lh, uh, tw, th, gh, bgd, sd, sh, mhd, wt=1.2, wo=4.2) {
+module Servo(w=SRV_w, d=SRV_d, lh=SRV_lh, uh=SRV_uh, tw=SRV_tw, th=SRV_th,
+             gh=SRV_gh, bgd=SRV_bgd, sd=SRV_sd, sh=SRV_sh, mhd=SRV_mhd,
+             wt=1.2, wo=4.2) {
     color("blue", 0.5) {
         // Lower body
         cube([w, d, lh]);
@@ -206,15 +213,8 @@ module servo(w, d, lh, uh, tw, th, gh, bgd, sd, sh, mhd, wt=1.2, wo=4.2) {
         translate([0, y[0], wo])
             rotate([0, -90, 0])
                 color(y[1])
-                    cylinder(h=4, d=wt);
+                    cylinder(h=tw, d=wt);
     }
-
-    // The servo horn
-    translate([d/2, d/2, SRV_fh-SH_si])
-        rotate([0, 0, -90])
-        color("white")
-        ServoHorn(SH_sOD, SH_eOD, SH_l, SH_t, SH_sh, SH_sd, SH_si,
-                  SH_sr, SH_srd, SH_shd, SH_lh, SH_lhd);
 }
 
 /**
@@ -233,7 +233,9 @@ module servo(w, d, lh, uh, tw, th, gh, bgd, sd, sh, mhd, wt=1.2, wo=4.2) {
  * @param lh Number of link holes
  * @param lhd Link hole diameter
  **/
-module ServoHorn(sOD=7, eOD=4, l=17.2, t=1.6, sh=4.5, sd=4.6, si=2.4, sr=1, srd=4.8, shd=2.3, lh=5, lhd=1) {
+module ServoHorn(sOD=SH_sOD, eOD=SH_eOD, l=SH_l, t=SH_t, sh=SH_sh, sd=SH_sd,
+                 si=SH_si, sr=SH_sr, srd=SH_srd, shd=SH_shd, lh=SH_lh,
+                 lhd=SH_lhd) {
     difference() {
         union() {
             // The shaft side outer cylinder
@@ -269,9 +271,139 @@ module ServoHorn(sOD=7, eOD=4, l=17.2, t=1.6, sh=4.5, sd=4.6, si=2.4, sr=1, srd=
     }
 }
 
+/**
+ * Servo with horn using default config
+ *
+ * @param ha horn angle
+ **/
+module ServoAndHorn(ha=-90) {
+    Servo();
+    // The servo horn
+    translate([SRV_d/2, SRV_d/2, SRV_fh-SH_si])
+        rotate([0, 0, ha])
+            color("white")
+                ServoHorn();
+}
+
+/**
+ * Servo and pinion using default config values.
+ *
+ * @param a Pinion angle
+ **/
+module ServoAndPinion(a=0) {
+    Servo();
+    // The servo horn
+    translate([SRV_d/2, SRV_d/2, SRV_fh+RP_pT])
+        rotate([180, 0, a])
+            color("white")
+                Pinion();
+}
+
+/**
+ * The pinion gear for driving the rack on the Z carraige
+ *
+ * @param mmpt Millimeters per tooth - must match that used for rack
+ * @param nt Number of teeth
+ * @param t Thickness
+ * @param pa Pressure angle - lowering this helps for small hears and racks.
+ *        Must be the same as for the rack.
+ * @param hd Screw hole diameter
+ * @param cOD Shaft collar outer diameter
+ * @param cID Shaft collar inner diameter - fits over servo shaft
+ * @param ch Shaft collar height
+ **/
+module Pinion(mmpt=RP_mmpt, nt=RP_pt, t=RP_pT, pa=RP_pa, hd=RP_phd, cOD=RP_pcOD, cID=RP_pcID, ch=RP_pch) {
+    // Make the gear level on the XY plane
+    translate([0, 0, t/2]) {
+        // The gear
+        gear(mmpt, nt, t, hd, pressure_angle=pa);
+        // The shaft collar
+        translate([0, 0, t/2])
+            difference() {
+                // Outer cylinder
+                cylinder(d=cOD, h=ch);
+                // cut out the inner hole
+                translate([0, 0, -1])
+                    cylinder(d=cID, h=ch+2);
+            }
+    }
+}
+
+/**
+ * Rack gear using the rack and pinion config params (RP_*) as defaults.
+ *
+ * The position for the default rack puts 0,0,0 in the center of the first tooth
+ * on the pitch radius. This makes it difficult to position the rack since
+ * special function ins the gear lib needs to be used to determine the exact movement
+ * amounts.
+ *
+ * This module does that and places the bottom left corner of the rack on 0,0,0.
+ *
+ * @param mmpt Millimeters per tooth - must match that used for pinion
+ * @param nt Number of teeth
+ * @param t Thickness
+ * @param pa Pressure angle - lowering this helps for small gears and racks.
+ *        Must be the same as for the rack.
+ * @param h Rack height
+ **/
+module Rack(mmpt=RP_mmpt, nt=RP_rt, t=RP_rT, h=RP_rH, pa=RP_pa) {
+    // The rack is not drawn at 0,0,0 so we position it there by moving
+    // it to the left ¾ of the circular_pitch, up by the height minus the
+    // module_value (or addendum circle)
+    translate([circular_pitch(mmpt)*3/4, h-module_value(mmpt), t/2])
+        rack(mmpt, nt, t, h, pa);
+}
+
 module Version(h=1, s=4, v="_ver_", halign="left", valign="bottom") {
     linear_extrude(height=h, convexity=4)
                 text(v, size=s, font="Bitstream Vera Sans",
                      halign=halign,
                      valign=valign);
 }
+
+// Demos
+
+// Servo
+translate([]) {
+    Servo();
+    // Servo horn
+    translate([0, -10, 0])
+        ServoHorn();
+    // Servo and horn
+    translate([0, 30, 0])
+        ServoAndHorn();
+    // Servo and pinion
+    translate([0, 60, 0])
+        ServoAndPinion();
+}
+
+// The rack and pinion
+translate([-40, 0, 0]) {
+    // The default rack is thicker than the pinion, and the servo shaft collar
+    // interferes with the rack unless the pinion is moved over in the rack.
+    // Also, the pinion is drawn with the collar on top which looks odd when
+    // viewed the first time, so we flip the hole thing around.
+    rotate([180, 0, 0]) {
+        // Move the pinion up by it's pitch radius and half a rack width in z
+        // direction
+        translate([0, pitch_radius(RP_mmpt, RP_pt), RP_rT/2])
+            Pinion();
+        // Move the rack down by it's pitch radius (only one tooth used for this
+        // calculation on a rack) 
+        translate([-circular_pitch(RP_mmpt)*5/4, module_value(RP_mmpt)-RP_rH-pitch_radius(RP_mmpt,1), 0])
+            Rack();
+    }
+}
+
+// Corners
+translate([60, 0, 0]) {
+    Corner45(10, 10);
+    translate([0, 15, 0])
+        rotate([0, 90, 0])
+            Corner45(6, 20);
+}
+
+// Bearing
+translate([40, 40, 0])
+    color("silver")
+        Bearing(8, 18, 10);

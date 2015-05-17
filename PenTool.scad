@@ -8,54 +8,33 @@
 print = true;
 
 // Draw the pen tool?
-drawPenTool = false;
-
-// How many pen holders to draw? 0 - 2
-drawPenHolder = 2;
-
-// Draw the pen lift?
-drawPenLift = false;
+drawPenTool = true;
 
 // Mounting option? One of:
 // "mag" for magnet mounts
 // "M2" for M2 screw mounting
+//mount = "mag";
 mount = "M2";
 
-// Pen diameter
-penD = 11;
+// Draw the Z Carriage?
+drawZCarriage = true;
+
+// Draw pinion gear if we are printing?
+drawPinion = true;
+
+/**
+ *  TODO:
+ **/
 
 //------------------------------------
 
 // Version number for Pen Tool
-_version = "v0.2";
-
-use <Screw_Library/Thread_Library.scad>;
+_version = "v0.6";
 
 include <Configuration.scad>;
-include <ToolsLib.scad>;
+use <ToolsLib.scad>;
 use <Pens.scad>;
-
-/**
- * Module to create a V type edge extension.
- *
- * The edge is always drawn in the Y-axis.
- *
- * @param wb The bottom (inner) width
- **/
-module VEdge(wb, wt, l, d, es="r") {
-    // With the edge side on the right, there is no rotation or translation
-    // With the edge on the left side, we rotate round the z axis, but then
-    // have to translate to bring it back into position.
-    rot = (es=="r") ? [0, 0, 0] : [0, 0, 180];
-    tr = (es=="r") ? [0, 0, 0] : [wb, l, 0];
-    translate(tr)
-        rotate(rot)
-            hull() {
-                cube([wb, l, 0.01]);
-                translate([0, 0, d-0.01])
-                    cube([wt, l, 0.01]);
-            }
-}
+use <publicDomainGearV1.1.scad>;
 
 /**
  * Pen Tool Holder
@@ -63,26 +42,35 @@ module VEdge(wb, wt, l, d, es="r") {
  * @param w The tool width
  * @param h The tool height
  * @param t The thickness
- * @param psw The base width for the V type pen holder slides
  * @param mag If supplied, caveties for magnets of this size will be added to be
  *        used as a means of attaching to the base. The value should be a vector
  *        of [d, t] where d is the magnet diameter (additional clearance will be
  *        added), and t is the magnet thickness. Once cavety bottom center, and
  *        one each top left and right will be added.
  **/
-module PenTool(w, h, t, psw, mag="") {
-    // Calculate where the servo will be placed along the tool height. We place
-    // the servo bottom 10mm above the point to which the X-Carraige will reach.
-    // Remember that the bottom of the pen tool lines up with the bottom of the
-    // X-Carraige.
-    srvY = XC_h + 10;
+module PenTool(w, h, t, mag="") {
+    // Position of the servo with pinion gear to mesh with rack on Z Carraige.
+    // 1. Move servo halfway in to get pinion center on left edge of Pen tool: SRV_d/2
+    // 2. Move servo left again to get pitch radius on the pen tool left edge
+    // 3. Move it right again to get the pitch radius level with Z Carraige left edge
+    // 4. Move right by the addendum of the rack gear to get the pressure points lined up
+    srvX = SRV_d/2 - pitch_radius(RP_mmpt, RP_pt) + module_value(RP_mmpt);
+    // Calculate where the servo will be placed along the tool height. The servo
+    // is mounted with the wires pointing up, and then the bottom mount tab is
+    // 2mm above the X Carraige top - this should give enough space for the M2
+    // mounting screws, but does not work with the magnet mounting yet!
+    srvY = XC_h+SRV_tw+2;
     // Calculate where the servo base will sit below the pentool face bottom.
-    // This position is calculated based on the position the servo horn top
-    // should be above the face top.
-    srvZ = SRV_hornPos + t - SRV_fhh;
+    // This position is calculated based on the position the pinion gear top
+    // should be above the face top. We get the pinion gear is thinner than the
+    // rack and we try to get the gear center on the rack center.
+    srvZ = t*3 + (RP_pT+RP_rT)/2 - SRV_fhp;
 
     // The x and y length to cut in at the bottom corners for the 45° corners
     cut45len = w/4;
+
+    // The Z Carriage shaft fittings outer diameter
+    zcsOD = ZC_sd+t*2;
 
     // Mounting tabs are either for magnets or M2 screws. We calculate the
     // diameters and sizes here to be used in multiple places.
@@ -97,42 +85,37 @@ module PenTool(w, h, t, psw, mag="") {
         union() {
             // Face
             cube([w, h, t]);
-            // The bottom foot piece
-            translate([cut45len, 0, t])
-                cube([w-2*cut45len, t, t*3]);
+            // The Z Carriage shaft fittings, bottom and top of the shaft
+            for (y=[0, ZC_sl-t*2])
+                translate([(w-zcsOD)/2, y, t])
+                    difference() {
+                        union() {
+                            // Block to center of fitting radius
+                            cube([zcsOD, t*2, zcsOD/2]);
+                            // Outer fitting cylinder
+                            translate([zcsOD/2, 0, zcsOD/2])
+                                rotate([-90, 0, 0])
+                                    cylinder(d=zcsOD, h=t*2);
+                        }
+                        // Hole in the middle. For the bottom fitting, the hole
+                        // does not go all the way through
+                        translate([zcsOD/2, -1, zcsOD/2])
+                            rotate([-90, 0, 0])
+                                cylinder(d=ZC_sd, h=t*2+2);
+                    }
 
-            // The servo box
-            bh = SRV_lh + srvZ;  // Box height from faceplate bottom
-            // Side support wall
-            translate([0, srvY, 0])
-                cube([t, SRV_w, bh]);
-            // Bottom under tab support
-            translate([-SRV_d, srvY-SRV_tw, 0])
-                cube([SRV_d+t, SRV_tw, bh]);
-            // Top under tab support
-            translate([-SRV_d, srvY+SRV_w, 0])
-                cube([SRV_d+t, SRV_tw, bh]);
-            // The support gussets
-            hull() {
-                translate([-SRV_d, srvY-SRV_tw, 0])
-                    cube([t, t, t]);
-                translate([0, srvY-SRV_tw-t*2, 0])
-                    cube([t, t*2, t]);
+            // Z Carriage guide plate
+            translate([w-t, cut45len, t]) {
+                cube([t, ZC_sl-t*5, zcsOD+1]);
+                // A fillet for extra support
+                translate([-t, 0, 0])
+                    difference() {
+                        cube([t, ZC_sl-t*5, t]);
+                        translate([0, -1, t])
+                            rotate([-90, 0, 0])
+                                cylinder(r=t, h=ZC_sl-t*5+2);
+                    }
             }
-            hull() {
-                translate([-SRV_d, srvY+SRV_w+SRV_tw-t, 0])
-                    cube([SRV_d, t, t]);
-                translate([0, h-t, 0])
-                    cube([t, t, t]);
-            }
-
-            // The pen holders slide
-            translate([(w-psw)/2-t, XC_h/2, t])
-                VEdge(t, t*1.2, XC_h/2, t, "r");
-            translate([(w+psw)/2, XC_h/2, t]) 
-                VEdge(t, t*1.2, XC_h/2, t, "l");
-            translate([(w-psw)/2-t, XC_h/2-t, t]) 
-                cube([psw+t*2, t, t]);
 
             // Top mounting tabs.
             // Left tab
@@ -147,6 +130,9 @@ module PenTool(w, h, t, psw, mag="") {
                 translate([-tabNeck-tabOD/2, -tabOD/2, 0])
                     cube([tabOD/2+tabNeck, tabOD, t]);
             }
+            // Servo moutning plate
+            translate([srvX-SRV_d, srvY-SRV_tw-2, 0])
+                cube([SRV_d, SRV_w+2*SRV_tw+4, t]);
         }
 
         // Parts we subtract
@@ -159,7 +145,7 @@ module PenTool(w, h, t, psw, mag="") {
         
         // Mounting holes if not using magnets, else magnet indents.
         // Bottom center - we use the tab OD to determine the center
-        translate([w/2, t+1+tabOD/2, mh_z])
+        translate([w/2, t+2+tabOD/2, mh_z])
             cylinder(h=mh_d, d=tabID);
         // Left tab
         translate([-1-tabOD/2, XC_h-tabOD/2, mh_z])
@@ -167,177 +153,120 @@ module PenTool(w, h, t, psw, mag="") {
         // Right tab
         translate([w+1+tabOD/2, XC_h-tabOD/2, mh_z])
             cylinder(h=mh_d, d=tabID);
-
+        // The Servo cutout using a larger sized servo and slight poitioning
+        // adjustments to allow the real servo to be adjusted closer/further
+        // from the rack gear on the Z Carraige.
+        translate([srvX, srvY-1, srvZ]) {
+            rotate([0, 0, 90])
+                Servo(d=SRV_d+2, w=SRV_w+2);
+        }
+        // Servo mounting holes
+        translate([srvX-SRV_d, srvY-SRV_tw, 0]) {
+            for(y=[SRV_tw/2, SRV_w+SRV_tw*2-SRV_tw/2])
+                translate([SRV_d/2, y, -1])
+                    hull() {
+                        cylinder(d=SRV_mhd, h=SRV_th+2);
+                        translate([-2, 0, 0])
+                            cylinder(d=SRV_mhd, h=SRV_th+2);
+                    }
+        }
     }
     
     // The version number
-    translate([w-1, h-5, t])
+    translate([5, h-5, t])
         rotate([0, 0, -90])
             Version(h=0.5, s=3, v=_version, valign="top");
 
     // The Servo
     if (print==false)
-        translate([0, srvY, srvZ])
+        translate([srvX, srvY, srvZ])
             rotate([0, 0, 90])
-            servo(SRV_w, SRV_d, SRV_lh, SRV_uh, SRV_tw, SRV_th, SRV_gh, SRV_bgd,
-                  SRV_sd, SRV_sh, SRV_mhd);
+            ServoAndPinion();
 }
 
 /**
- * Draws a pen holder that slides into the pentool.
+ * Z Carraige.
  *
- * @param id The inner diameter. This is the pen diameter at halfway up the
- *        X-Carraige height, for the lower holder, and the full X-Carraige
- *        height for the top holder.
- * @param bw The width of the holder base. This should match the width of the
- *        slide used for the PenTool.
- * @param bt The base thickness. The PenTool thickness is used for the height
- *        or thickness of the slide walls. This value should match the PenTool
- *        thickness for that reason.
- * @param bh The height of the base - this should be half the slide height on
- *        the PenTool, which currently is half the height of the X-Carraige.
+ * @param sd Shaft diameter
+ * @param sl Shaft Length
+ * @param cw Carraige width
+ * @param cd Carraige depth
+ * @param ch Carraige height
+ * @param bh Bushings height
+ * @param bt Wall thickness for bushings
+ * @param so When not printing, and the shaft is drawn, how far to offset the
+ *        base from the bottom of the shaft. Or, how far should the carriage be
+ *        up the shaft.
  **/
-module PenLoop(id, bw, bt, bh) {
-    // Auto adjust base width for slight clearance for sliding in
-    bw = bw-0.3;
+module ZCarriage(sd, sl, cw, cd, ch, bh, bt, so=5) {
+    // Calculate the rack length
+    rackL = RP_rt*RP_mmpt+RP_mmpt/2;
 
-    // The base is a V type shape to it slides into the PenTool slide and stays
-    // put. Calculate the narrow side width of the base where the loop is
-    // attached to.
-    bnw = bw - 2*(bt*0.2);
-
-    // Loop OD is 1mm larger than the ID. This allows the ID to be almost exactly
-    // that of the pen, but we can cut the loop in the front center to give a
-    // tight fit, but not too tight to not allow it to slide up and down.
-    od = id+2;
-
-    // The Pen (loop) center is always this far from the face.
-    lc = PEN_coffs;
-
-    // Start with the V slide base
-    translate([0, 0, bh])
-        rotate([-90, 0, 0]) {
-            // The inner square base with bt width edges on both sides
-            translate([bt, 0, 0])
-                cube([bw-2*bt, bh, bt]);
-            // Add a slanted edge of bt base with a 20% slant on the left
-            VEdge(bt, bt/1.2, bh, bt, "l");
-            // Do the same for the right
-            translate([bw-bt, 0, 0])
-                VEdge(bt, bt/1.2, bh, bt, "r");
-        }
-    // Loop and neck
+    // The z carraige
     difference() {
         union() {
-            translate([bw/2, lc, 0])
-                cylinder(h=bt, d=od);
-            translate([(bw-od)/2, 0, 0])
-                cube([od, lc, bt]);
-            translate([(bw-od)/2+od, bt/4, bt/4])
-                rotate([0, -90, 0])
-                    Corner45(bt*2, od);
-        }
-            translate([bw/2, lc, -1])
-                cylinder(h=bt+2, d=id);
-    }
-}
-
-/**
- * Fits arounf the pen and connects to the servo horn to raise and lower the pen.
- *
- * @param pd Pen diameter at the point where this should fit.
- * @param ta Taper Angle for the inner cylinder. This should probably never be
- *        much more than 2° or 3°.
- **/
-module PenLift(pd, ta=2) {
-    h = 10; // height
-    trt = pd/2+1; // Top radius for the tappered inner cylinder
-    trb = h/tan(90-ta) + pd/2 + 1; // Bottom radius for tappered inner cylinder
-
-    // The inner cylinder
-    difference() {
-        // The tappered outer side
-        cylinder(r1=trb, r2=trt, h=h);
-        // Remove the inner tube at 0.2mm less than the pen diameter
-        translate([0, 0, -1])
-            cylinder(d=pd-0.2, h=h+2);
-        // Make a 1mm cut in the side of the inner cylinder
-        translate([0, -0.5, -1])
-            cube([trb+2, 1, h+2]);
-    }
-
-    // The outer fitting placed next to the inner for printing, or fitted over
-    // the inner tube if not printing
-    tr = print==true ? [trb*2+2, 0, 0] : [0, 0, 2];
-    translate(tr)
-        difference() {
-            union() {
-                // Outer diameter is the same as the bottom wider part of the
-                // tappered inner tube plus 2mm wall thickness
-                cylinder(d=trb*2+2, h=h);
-                // The hook for the servo horn. The part of the servo horn reaching
-                // over into the pen tool can be calculated as follows:
-                hornBit = SH_l - (SRV_d+SH_sOD)/2;
-                // We want the horn hook width to be 4mm
-                hhw = 5;
-                // The zero position for the pen lift will be the center of pen tool
-                // width. We can then calculate the position for the horn hook.
-                translate([0, -PT_w/2+hornBit-hhw, 0])//+hornBit-hhw, 0])
-                    difference() {
-                        // The hook distance beyound the outer tube edge, id the
-                        // height of the servo horn above the tube when fitted
-                        // to the pen, including a 2mm wall
-                        cube([SRV_hornPos-PEN_coffs+2, hhw, h]);
-                        // Remove a cube on the inside for the horn to fit in
-                        translate([SRV_hornPos-PEN_coffs-SH_t-0.3, -1, 2])
-                            cube([SH_t+0.6, 9, h-4]);
-                    }
+            // The central carraige
+            cube([cw, cd, ch]);
+            // Bushings with the shaft half sunk into the central carraige
+            for(z=[0, (ch-bh)/2, ch-bh]) {
+                translate([cw/2, cd, z])
+                    cylinder(d=sd+bt, h=bh);
             }
-            // Cut out the inner hole to be the same diameter as widest bottom
-            // part of the inner tube
-            translate([0, 0, -1])
-                cylinder(d=trb*2, h=h+2);
         }
+        // Take away the shaft center with a 0.3mm clearance
+        translate([cw/2, cd, -1])
+            cylinder(d=sd+0.3, h=ch+2);
+        // The pen position
+        pd = cw-4; // Leave 2mm flat on each side to allow printing face down
+        translate([cw/2, 0, -1])
+            rotate([0, 0, 360/16])
+                cylinder(d=pd, h=ch+2, $fn=8);
+        // Remove a space for the rack gear
+        translate([-1, cd-RP_rT, ch-5-rackL])
+            cube([RP_rH+1, RP_rT+1, rackL]);
+        // Holes for the pen straps
+        for(z=[5, ch-5]) {
+            translate([-1, 3, z])
+                rotate([0, 90, 0])
+                    cylinder(d=2, h=cw+2);
+        }
+    }
+
+    // Z Shaft if not ready for printing
+    if(print==false)
+        color("silver")
+            translate([cw/2, cd, -so])
+                cylinder(d=sd, h=sl);
+    
+    // Rack gear
+    translate([RP_rH, cd, ch-5-rackL])
+        rotate([0, -90, 90])
+            Rack();
 
 }
 
 // Draw what is required
 if (drawPenTool)
-    PenTool(PT_w, PT_h, PT_t, PT_psw, mount=="mag" ? magSize : "");
+    PenTool(PT_w, PT_h, PT_t, mount=="mag" ? magSize : "");
 
-if(print==false && drawPenHolder>0) {
-    translate([PT_t+0.2, XC_h*3/4, PT_t])
-        rotate([90, 0, 0])
-            color("orange")
-            PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4);
-    if (drawPenHolder>1)
-        translate([(PT_w-PT_psw)/2+0.2, XC_h+5, PT_t])
-            rotate([-90, 180, 180])
-                color("green")
-                PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4+5);
-    // Draw the pen
-    translate([PT_w/2, 0, PT_t+PEN_coffs])
-        rotate([-90, 0, 0])
-            Artliner725();
-}
-
-if (print==true && drawPenHolder>0) {
-    translate([PT_psw, 0, 0])
-        rotate([0, 0, 180])
-        PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4);
-    if (drawPenHolder>1)
-        translate([0, 1, 0])
-            PenLoop(penD+0.4, PT_psw, PT_t, XC_h/4+5);
-}
-
-if (drawPenLift==true) {
-    if(print==true) {
-        translate([-50, 0, 0])
-            PenLift(penD);
+if(drawZCarriage) 
+    if (print==false) {
+        // Position on the pen tool
+        translate([(PT_w-ZC_cw)/2, PT_t+22, ZC_cd+ZC_sd/2+PT_t*2])
+            rotate([-90, 0, 0])
+                ZCarriage(ZC_sd, ZC_sl, ZC_cw, ZC_cd, ZC_ch, ZC_bh, ZC_bt, so=22);
+        // Draw the Artliner725 pen
+        translate([PT_w/2, 0, 14.5])
+            rotate([-90, 0, 0])
+                Artliner725();
     } else {
-        translate([PT_w/2, 50, PT_t+PEN_coffs])
-            rotate([-90, -90, 0])
-            PenLift(penD);
+        // Postion next to the pen tool, pen side down for print
+        translate([-10, 0, 0])
+            rotate([-90, 180, 0])
+                ZCarriage(ZC_sd, ZC_sl, ZC_cw, ZC_cd, ZC_ch, ZC_bh, ZC_bt);
     }
-}
 
+// Pinion gear only if we are printing
+if(print && drawPinion)
+    translate([-10-ZC_cw/2, ZC_ch+10, 0])
+        Pinion();

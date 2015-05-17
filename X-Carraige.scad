@@ -15,10 +15,10 @@ mount = "M2";
 //------------------------------------
 
 // Version number for X Carraige
-_version = "v0.5";
+_version = "v0.6";
 
 include <Configuration.scad>;
-include <ToolsLib.scad>;
+use <ToolsLib.scad>;
 
 /**
  * Module to draw one rotated S shape spring.
@@ -250,7 +250,7 @@ module XCarraige(w, h, t, rd, rcd, bw, mag="") {
         }
         // Mounting holes if not using magnets, else magnet indents.
         // Bottom center - we use the tab OD to determine the center
-        translate([w/2, t+1+tabOD/2, mh_z])
+        translate([w/2, t+2+tabOD/2, mh_z])
             cylinder(h=mh_d, d=tabID);
         // Left tab
         translate([-1-tabOD/2, XC_h-tabOD/2, mh_z])
