@@ -123,6 +123,6 @@ ZC_bh = 5;     // Height for each of the 3 bushings
 ZC_bt = 3;     // Wall thickness for the bushings
 ZC_cw = PT_w-2*PT_t; // Carraige width - same width as the pen tool, sans a pen
                      // tool wall thicknes left and right
-ZC_cd = 10;   // Carraige depth excluding the rear half bushings
+ZC_cd = ZC_cw+2;  // Carraige depth excluding the rear half bushings
 ZC_ch = 50;   // Carraige height
 
