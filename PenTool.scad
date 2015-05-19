@@ -5,7 +5,7 @@
 // Draw/print Control
 
 // Set to true to draw for printing
-print = true;
+print = false;
 
 // If true, and not printing, then the objects will be drawn in design mode
 // without rotation or positioning.
@@ -58,7 +58,8 @@ module PenTool(w, h, t, mag="") {
     // 2. Move servo left again to get pitch radius on the pen tool left edge
     // 3. Move it right again to get the pitch radius level with Z Carraige left edge
     // 4. Move right by the addendum of the rack gear to get the pressure points lined up
-    srvX = SRV_d/2 - pitch_radius(RP_mmpt, RP_pt) + module_value(RP_mmpt);
+    // 5. Add 1mm for adjustment
+    srvX = SRV_d/2 - pitch_radius(RP_mmpt, RP_pt) + module_value(RP_mmpt) + 1;
     // Calculate where the servo will be placed along the tool height. The servo
     // is mounted with the wires pointing up, and then the bottom mount tab is
     // 2mm above the X Carraige top - this should give enough space for the M2
@@ -90,7 +91,7 @@ module PenTool(w, h, t, mag="") {
             // Face
             cube([w, h, t]);
             // The Z Carriage shaft fittings, bottom and top of the shaft
-            for (y=[0, ZC_sl-t*2])
+            for (y=[0, h-t*2])
                 translate([(w-zcsOD)/2, y, t])
                     difference() {
                         union() {
@@ -101,8 +102,7 @@ module PenTool(w, h, t, mag="") {
                                 rotate([-90, 0, 0])
                                     cylinder(d=zcsOD, h=t*2);
                         }
-                        // Hole in the middle. For the bottom fitting, the hole
-                        // does not go all the way through
+                        // Hole in the middle.
                         translate([zcsOD/2, -1, zcsOD/2])
                             rotate([-90, 0, 0])
                                 cylinder(d=ZC_sd, h=t*2+2);
@@ -136,8 +136,8 @@ module PenTool(w, h, t, mag="") {
             }
             // Servo moutning plate - servo width plus mounting tabs plus 2mm
             // each side, same width as the servo, and double thick.
-            translate([-SRV_d+2, h/2, 0])
-                cube([SRV_d+2, SRV_w+2*SRV_tw+4, t*2]);
+            translate([-SRV_d+4, h/2, 0])
+                cube([SRV_d, SRV_w+2*SRV_tw+4, t*2]);
         }
 
         // Parts we subtract
@@ -161,9 +161,9 @@ module PenTool(w, h, t, mag="") {
 
         // Servo cutout
         translate([-SRV_d-1, h/2+2+SRV_tw-0.5, -1])
-            cube([SRV_d+5, SRV_d+SRV_bgd/2+1, t*2+2]);
+            cube([SRV_d+6, SRV_d+SRV_bgd/2+1, t*2+2]);
         // Servo mounting holes
-        translate([-SRV_d/2-0.5, h/2+2, 0]) {
+        translate([-SRV_d/2+1, h/2+2, 0]) {
             for(y=[SRV_tw/2, SRV_w+SRV_tw*2-SRV_tw/2])
                 translate([SRV_d/2, y, -1])
                     hull() {

@@ -118,7 +118,7 @@ SRV_fhp = SRV_fh+RP_pT;   // Servo full height including pinion
 
 // Z carriage config
 ZC_sd = 3;  // Shaft diameter
-ZC_sl = 80; // Shaft length
+ZC_sl = 90; // Shaft length
 ZC_bh = 5;     // Height for each of the 3 bushings
 ZC_bt = 3;     // Wall thickness for the bushings
 ZC_cw = PT_w-2*PT_t; // Carraige width - same width as the pen tool, sans a pen

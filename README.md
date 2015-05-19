@@ -55,6 +55,28 @@ Y Carraige
 ==========
 To be completed...
 
+Z Carraige
+==========
+The Z Carriage is a complete redesign with the following features:
+
+* Uses rack and pinions gearing with micro servo to raise and lower pen.
+* Z Carriage runs on verticle M3 rod using bushings printed as part of the
+  carraige.
+* Complete carraige can quickly be removed by removing slider rod.
+* Various pen sizes can be used, and pens are secured in place using top and
+  bottom grub screws.
+* Z Carriage fits on removable pen tool which is secured to X Carriage using
+  M2 screws or magnets.
+
+The best way to secure the Z Carriage vertical rod to the pen tool is to cut a
+thread on the end of the rod using an M3 die, and to also cut a thread in the
+bottom rod hole in the pen tool. It is then easy to simply slide the rod through
+the top top rod holder hole, through the Z Carraige bushings and then screw into
+the bottom rod holder thread.
+
+The servo position may be adjusted in the mounting holes to make the pinion
+mesh properly with the rack gear on the Z Carraige.
+
 Motor Coupling
 ==============
 The Motor Coupling SCAD file can be used to print a coupling that fits snugly
