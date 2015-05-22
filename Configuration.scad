@@ -99,7 +99,10 @@ MBD = 28.25;  // motor body OD
 MTH  = 0.8;   // mounting tab thickness
 MTW  = 7.0;   // mounting tab width
 MHCC = 35.0;  // mounting hole center-to-center
+SBH = 1.45;   // shaft boss height above motor body
 SHH = 9.75;   // height of shaft above motor body 
+WBW  = 14.6;  // plastic wiring box width
+WBD  = 31.3;  // body diameter to outer surface of wiring box
 
 // Rack and pinion parameters
 RP_mmpt = 4;     // Millimeters per tooth for the rack/pinion gears
@@ -125,4 +128,19 @@ ZC_cw = PT_w-2*PT_t; // Carraige width - same width as the pen tool, sans a pen
                      // tool wall thicknes left and right
 ZC_cd = ZC_cw+2;  // Carraige depth excluding the rear half bushings
 ZC_ch = 50;   // Carraige height
+
+// Y Bridge config
+YB_t = wallT; // Thickness for all walls
+// The height of the bridge should be just enough to clear the motor shaft plus
+// a 4mm tolerance. The motor sticks through the top of the bridge which also
+// has a thickness to take into account.
+YB_h = SHH+5-YB_t;  // Height
+YB_l = 40;          // Lenght (front to back)
+YB_rcd = 50;        // Rails center distance - distance center-to-center
+YB_rd = railD;      // Diameter of rail rods
+YB_dwd = 1;         // Drive wire diameter
+
+YB_mscd = 10; // The motor shaft coupling diameter that will be used motor.
+              // This is to determine the how wide apart to make the drive wire
+              // guide slits on the motor side bridge.
 
