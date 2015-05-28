@@ -144,3 +144,21 @@ YB_mscd = 10; // The motor shaft coupling diameter that will be used motor.
               // This is to determine the how wide apart to make the drive wire
               // guide slits on the motor side bridge.
 
+
+// Y Carraige parameters
+YC_t = wallT; // Thickness for all walls
+YC_l = 40;          // Lenght (front to back)
+YC_rcd = 50;        // Rails center distance - distance center-to-center
+YC_rd = railD;      // Diameter of rail rods
+YC_bl = 13;         // Bushing length
+YC_bt = YC_t;       // Bushing wall thickness - should not be greater than YC_t
+YC_bmhd = 5;        // Mounting hole diameter to mount bed
+YC_bmmd = 9 + 0.4;  // Magnet dimeter if used for bed mounting
+
+// The bed parameters
+YBD_x = 60;     // Size in x direction
+YBD_y = 60;     // Size in y direction
+YBD_t = 1;      // Thickness. For the bed, 1mm is enough
+YBD_mhd = 3;    // Diameter for mounting holes
+YBD_mmd = 6 + 0.4;  // Diameter of magnets used for quick release mounting
+YBD_mmt = 3 + 0.2;  // Thickness of magnets, including play
